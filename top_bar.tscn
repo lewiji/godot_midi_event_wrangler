@@ -1,0 +1,21 @@
+[gd_scene format=2]
+
+[node name="HBoxContainer" type="HBoxContainer"]
+margin_right = 934.0
+margin_bottom = 43.0
+size_flags_vertical = 3
+size_flags_stretch_ratio = 0.1
+
+[node name="DevicesLabel" type="Label" parent="."]
+margin_top = 14.0
+margin_right = 55.0
+margin_bottom = 28.0
+text = "Devices:"
+
+[node name="DevicesList" type="OptionButton" parent="."]
+unique_name_in_owner = true
+margin_left = 59.0
+margin_top = 11.0
+margin_right = 195.0
+margin_bottom = 31.0
+size_flags_vertical = 4
