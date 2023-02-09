@@ -2,12 +2,15 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using Godot;
+using MidiSharp;
 using MidiWranglerGodot.src;
 
 namespace MidiWranglerGodot
 {
     public class Main : Control
     {
+        Queue<MidiNote> _midiNotes = new();
+        Queue<MidiNote> _notesToLog = new();
         
         public MidiDeviceStatus MidiDeviceStatus
         {
@@ -32,14 +35,14 @@ namespace MidiWranglerGodot
             set => _cutOffUSec = (ulong)(value * 1000000);
         }
         ulong _cutOffUSec;
-        ulong? _firstEventReceived = null;
-        ulong? _lastEventReceived = null;
+        ulong? _firstSyncEventReceived;
+        ulong? _lastSyncEventReceived;
         
         OptionButton _optionList;
         RichTextLabel _midiLog;
         RichTextLabel _statusText;
-        Timer _pollDeviceTimer = new Timer();
-        HashSet<string> _currentDevices = new HashSet<string>();
+        readonly Timer _pollDeviceTimer = new ();
+        readonly HashSet<string> _currentDevices = new ();
 
         public Main()
         {
@@ -48,37 +51,64 @@ namespace MidiWranglerGodot
         
         public override void _Ready()
         {
-            _optionList = GetNode<OptionButton>("%DevicesList");
-            _midiLog = GetNode<RichTextLabel>("%MidiEventLog");
-            _statusText = GetNode<RichTextLabel>("%StatusText");
+            _optionList = GetNode<OptionButton>("%Toolbar/%DevicesList");
+            _midiLog = GetNode<RichTextLabel>("%Monitor/%MidiEventLog");
+            _statusText = GetNode<RichTextLabel>("%StatusBar/%StatusText");
             AddChild(_pollDeviceTimer);
             
             OS.OpenMidiInputs();
             EnumerateMidiDevices();
             
             _pollDeviceTimer.Connect("timeout", this, nameof(EnumerateMidiDevices));
-            _pollDeviceTimer.Start(3f);
+            _pollDeviceTimer.Start(5f);
         }
 
         public override void _Input(InputEvent @event)
         {
             if (@event is not InputEventMIDI eventMidi) return;
-            if (eventMidi.Message == (int)MidiMessageList.TimingClock) return;
+            if (eventMidi.Message == (int)MidiMessageList.TimingClock)
+            {
+                _firstSyncEventReceived ??= OS.GetTicksUsec();
+                _lastSyncEventReceived = OS.GetTicksUsec();
+                return;
+            }
             if (MidiDeviceStatus != MidiDeviceStatus.Receiving)
                 MidiDeviceStatus = MidiDeviceStatus.Receiving;
             
-            _firstEventReceived ??= OS.GetTicksUsec();
-            _lastEventReceived ??= OS.GetTicksUsec();
+            _lastSyncEventReceived = OS.GetTicksUsec();
+
+            var noteData = new MidiNote
+            {
+                Message = eventMidi.Message,
+                Note = eventMidi.Pitch,
+                Velocity = eventMidi.Velocity,
+                Timestamp = _lastSyncEventReceived.GetValueOrDefault() - _firstSyncEventReceived.GetValueOrDefault()
+            };
             
-            _midiLog.AppendBbcode($"d{eventMidi.Device} m{eventMidi.Message} n{eventMidi.Pitch} p{eventMidi.Pressure} v{eventMidi.Velocity}\n");
+            _midiNotes.Enqueue(noteData);
+            _notesToLog.Enqueue(noteData);
         }
 
         public override void _Process(float delta)
         {
-            if (_lastEventReceived != null && OS.GetTicksUsec() - _lastEventReceived > _cutOffUSec)
+            if (_lastSyncEventReceived != null && OS.GetTicksUsec() - _lastSyncEventReceived > _cutOffUSec)
             {
                 MidiDeviceStatus = MidiDeviceStatus.Connected;
             }
+
+            if (_deviceStatus == MidiDeviceStatus.Connected && _midiNotes.Count > 0)
+            {
+                var seq = new MidiSequence();
+                
+                while (_midiNotes.Count > 0)
+                {
+                }
+            }
+
+            if (_notesToLog.Count <= 0) return;
+            var noteData = _notesToLog.Dequeue();
+            _midiLog.AppendBbcode(
+                $"[{noteData.Timestamp / 1000000f}] {(MidiMessageList)noteData.Message}: {noteData.Note} @ {noteData.Velocity}\n");
         }
 
         void EnumerateMidiDevices()
