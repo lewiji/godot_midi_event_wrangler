@@ -1,6 +1,4 @@
-using Godot;
-
-namespace MidiWranglerGodot;
+namespace MidiWranglerGodot.Midi;
 
 public struct MidiNote
 {

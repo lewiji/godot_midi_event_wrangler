@@ -1,11 +1,14 @@
-[gd_scene format=2]
+[gd_scene load_steps=2 format=2]
 
-[node name="HBoxContainer3" type="HBoxContainer"]
+[ext_resource path="res://src/StatusBarControl.cs" type="Script" id=1]
+
+[node name="StatusBar" type="HBoxContainer"]
 margin_top = 494.0
 margin_right = 934.0
 margin_bottom = 538.0
 size_flags_vertical = 3
 size_flags_stretch_ratio = 0.1
+script = ExtResource( 1 )
 
 [node name="Panel" type="Panel" parent="."]
 margin_right = 934.0

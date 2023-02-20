@@ -1,4 +1,4 @@
-namespace MidiWranglerGodot.src;
+namespace MidiWranglerGodot.Midi;
 
 public enum MidiDeviceStatus
 {

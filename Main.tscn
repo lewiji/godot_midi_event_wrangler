@@ -3,7 +3,7 @@
 [ext_resource path="res://Main.cs" type="Script" id=1]
 [ext_resource path="res://top_bar.tscn" type="PackedScene" id=2]
 [ext_resource path="res://main_panel.tscn" type="PackedScene" id=3]
-[ext_resource path="res://bottom_bar.tscn" type="PackedScene" id=4]
+[ext_resource path="res://status_bar.tscn" type="PackedScene" id=4]
 
 [node name="Main" type="Control"]
 anchor_right = 1.0
